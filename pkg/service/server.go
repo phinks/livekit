@@ -127,12 +127,19 @@ func NewLivekitServer(conf *config.Config,
 	}
 
 	mux.Handle(roomServer.PathPrefix(), roomServer)
+	logger.Warnw(roomServer.PathPrefix(), nil)
 	mux.Handle(egressServer.PathPrefix(), egressServer)
+	logger.Warnw(egressServer.PathPrefix(), nil)
 	mux.Handle(ingressServer.PathPrefix(), ingressServer)
+	logger.Warnw(ingressServer.PathPrefix(), nil)
 	mux.Handle(sipServer.PathPrefix(), sipServer)
+	logger.Warnw(sipServer.PathPrefix(), nil)
 	mux.Handle("/rtc", rtcService)
+	logger.Warnw("/rtc", nil)
 	mux.Handle("/agent", agentService)
+	logger.Warnw("/agent", nil)
 	mux.HandleFunc("/rtc/validate", rtcService.Validate)
+	logger.Warnw("/rtc/validate", nil)
 	mux.HandleFunc("/", s.defaultHandler)
 
 	s.httpServer = &http.Server{

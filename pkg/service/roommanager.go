@@ -276,6 +276,7 @@ func (r *RoomManager) StartSession(
 
 	participant := room.GetParticipant(pi.Identity)
 	if participant != nil {
+		logger.Infow("Existing participant")
 		// When reconnecting, it means WS has interrupted but underlying peer connection is still ok in this state,
 		// we'll keep the participant SID, and just swap the sink for the underlying connection
 		if pi.Reconnect {
@@ -343,6 +344,7 @@ func (r *RoomManager) StartSession(
 		participant.GetLogger().Infow("removing duplicate participant")
 		room.RemoveParticipant(participant.Identity(), participant.ID(), types.ParticipantCloseReasonDuplicateIdentity)
 	} else if pi.Reconnect {
+		logger.Infow("New participant - reconect")
 		// send leave request if participant is trying to reconnect without keep subscribe state
 		// but missing from the room
 		var leave *livekit.LeaveRequest

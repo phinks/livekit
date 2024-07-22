@@ -877,9 +877,19 @@ func (r *Room) SimulateScenario(participant types.LocalParticipant, simulateScen
 	case *livekit.SimulateScenario_Migration:
 		r.Logger.Infow("simulating migration", "participant", participant.Identity())
 		// drop participant without necessarily cleaning up
-		if err := participant.Close(false, types.ParticipantCloseReasonSimulateMigration, true); err != nil {
-			return err
+		r.serverInfo.NodeId = ""
+		participant.SetMigrateState(types.MigrateStateInit)
+		for _, element := range r.participants {
+			r.Logger.Infow("Migrating", "participant", element)
+			element.SetMigrateState(types.MigrateStateInit)
+			element.MaybeStartMigration(true, nil)
 		}
+		participant.MaybeStartMigration(true, nil)
+		//if err := participant.Close(false, types.ParticipantCloseReasonSimulateMigration, true); err != nil {
+		//	r.Logger.Errorw("****Err in migrate", err)
+		//	return err
+		//}
+		r.Logger.Infow("******** simulating migration done", "participant", participant.Identity())
 	case *livekit.SimulateScenario_NodeFailure:
 		r.Logger.Infow("simulating node failure", "participant", participant.Identity())
 		// drop participant without necessarily cleaning up

@@ -100,6 +100,7 @@ func (s *defaultSessionHandler) HandleSession(
 	requestSource routing.MessageSource,
 	responseSink routing.MessageSink,
 ) error {
+	logger.Debugw("HandleSession")
 	prometheus.IncrementParticipantRtcInit(1)
 
 	rtcNode, err := s.router.GetNodeForRoom(ctx, roomName)

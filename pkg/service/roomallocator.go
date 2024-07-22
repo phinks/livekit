@@ -56,18 +56,22 @@ func NewRoomAllocator(conf *config.Config, router routing.Router, rs ObjectStore
 // CreateRoom creates a new room from a request and allocates it to a node to handle
 // it'll also monitor its state, and cleans it up when appropriate
 func (r *StandardRoomAllocator) CreateRoom(ctx context.Context, req *livekit.CreateRoomRequest) (*livekit.Room, bool, error) {
+	logger.Infow("CreateRoom", "room", req.Name)
 	token, err := r.roomStore.LockRoom(ctx, livekit.RoomName(req.Name), 5*time.Second)
 	if err != nil {
+		logger.Infow("CreateRoom lock failed")
 		return nil, false, err
 	}
 	defer func() {
 		_ = r.roomStore.UnlockRoom(ctx, livekit.RoomName(req.Name), token)
 	}()
 
+	logger.Infow("CreateRoom 2")
 	// find existing room and update it
 	var created bool
 	rm, internal, err := r.roomStore.LoadRoom(ctx, livekit.RoomName(req.Name), true)
 	if errors.Is(err, ErrRoomNotFound) {
+		logger.Infow("CreateRoom succeeded")
 		created = true
 		rm = &livekit.Room{
 			Sid:          guid.New(utils.RoomPrefix),
@@ -78,11 +82,14 @@ func (r *StandardRoomAllocator) CreateRoom(ctx context.Context, req *livekit.Cre
 		internal = &livekit.RoomInternal{}
 		applyDefaultRoomConfig(rm, internal, &r.config.Room)
 	} else if err != nil {
+		logger.Infow("CreateRoom failed")
 		return nil, false, err
 	}
 
+	logger.Infow("CreateRoom 3")
 	req, err = r.applyNamedRoomConfiguration(req)
 	if err != nil {
+		logger.Infow("CreateRoom failed 2")
 		return nil, false, err
 	}
 
@@ -124,9 +131,15 @@ func (r *StandardRoomAllocator) CreateRoom(ctx context.Context, req *livekit.Cre
 		return nil, false, err
 	}
 
+	nID := livekit.NodeID(req.NodeId)
+        if nID == ""{
+              logger.Infow("CreateRoom migration?????")
+              r.router.SetNodeForRoom(ctx, livekit.RoomName(rm.Name), "")
+        }else{
 	// check if room already assigned
 	existing, err := r.router.GetNodeForRoom(ctx, livekit.RoomName(rm.Name))
 	if !errors.Is(err, routing.ErrNotFound) && err != nil {
+		logger.Infow("CreateRoom node not found")
 		return nil, false, err
 	}
 
@@ -134,22 +147,26 @@ func (r *StandardRoomAllocator) CreateRoom(ctx context.Context, req *livekit.Cre
 	if err == nil && selector.IsAvailable(existing) {
 		// if node hosting the room is full, deny entry
 		if selector.LimitsReached(r.config.Limit, existing.Stats) {
+			logger.Infow("CreateRoom failed limits reached")
 			return nil, false, routing.ErrNodeLimitReached
 		}
-
+		logger.Infow("CreateRoom existing room" + existing.Id)
 		return rm, created, nil
 	}
+        }
 
 	// select a new node
 	nodeID := livekit.NodeID(req.NodeId)
 	if nodeID == "" {
 		nodes, err := r.router.ListNodes()
 		if err != nil {
+			logger.Infow("CreateRoom failed 3")
 			return nil, false, err
 		}
 
 		node, err := r.selector.SelectNode(nodes)
 		if err != nil {
+			logger.Infow("CreateRoom failed 4")
 			return nil, false, err
 		}
 
@@ -161,6 +178,7 @@ func (r *StandardRoomAllocator) CreateRoom(ctx context.Context, req *livekit.Cre
 	if err != nil {
 		return nil, false, err
 	}
+	req.NodeId = string(nodeID)
 
 	return rm, true, nil
 }

@@ -351,9 +351,11 @@ func (s *RTCService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				case *livekit.SignalResponse_Answer:
 					pLogger.Debugw("sending answer", "answer", m)
 				case *livekit.SignalResponse_Join:
+					pLogger.Debugw("signal join", "answer", m)
 					signalStats.ResolveRoom(m.Join.GetRoom())
 					signalStats.ResolveParticipant(m.Join.GetParticipant())
 				case *livekit.SignalResponse_RoomUpdate:
+					pLogger.Debugw("signal update", "answer", m)
 					signalStats.ResolveRoom(m.RoomUpdate.GetRoom())
 				}
 

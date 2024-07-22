@@ -431,6 +431,7 @@ func (w *Worker) handleSimulateJob(simulate *livekit.SimulateJobRequest) {
 }
 
 func (w *Worker) handleWorkerPing(ping *livekit.WorkerPing) {
+	 w.logger.Debugw("!!!worker ping")
 	w.sendRequest(&livekit.ServerMessage{Message: &livekit.ServerMessage_Pong{
 		Pong: &livekit.WorkerPong{
 			LastTimestamp: ping.Timestamp,
@@ -455,5 +456,6 @@ func (w *Worker) handleWorkerStatus(update *livekit.UpdateWorkerStatus) {
 func (w *Worker) handleMigrateJob(migrate *livekit.MigrateJobRequest) {
 	// TODO(theomonnom): On OSS this is not implemented
 	// We could maybe just move a specific job to another worker
+	w.logger.Debugw("!!!worker status update")
 	w.handler.HandleWorkerMigrateJob(w, migrate)
 }
